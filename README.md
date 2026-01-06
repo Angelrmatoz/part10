@@ -75,4 +75,4 @@ Revisa `rate-repository-api/README.md` para instrucciones completas del servidor
 
 ---
 
-¿Quieres que cree un commit con este cambio en el repositorio?
+Este proyecto es parte del curso Full Stack Open, Parte 10: Aplicaciones móviles con React Native y Expo.
