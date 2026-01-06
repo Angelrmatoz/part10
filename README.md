@@ -1,72 +1,78 @@
-# Lista de Repositorios Revisados (Full Stack Open - Parte 10)
+# Mi App — Repositories (Full Stack Open — Parte 10)
 
-Este proyecto es una aplicación de ejemplo desarrollada como parte del curso **Full Stack Open** (Parte 10: React Native). La aplicación muestra una lista de repositorios revisados, simulando una interfaz similar a la de GitHub, y está construida usando React Native y Expo.
+Aplicación móvil de ejemplo (React Native + Expo) que muestra una lista de repositorios revisados. Incluye un backend GraphQL (rate-repository-api) que sirve datos y persistencia en SQLite.
 
-## Características principales
+Estructura relevante
 
-- **Visualización de repositorios:**
-  - Muestra una lista de repositorios con información relevante: nombre completo, descripción, lenguaje, número de estrellas, forks, reviews y rating.
-  - Cada repositorio incluye la imagen de avatar del autor.
-  - Los números grandes (como estrellas y forks) se formatean en miles (ejemplo: 21553 → 21.5k).
+- App (cliente): App.js, src/ (components, hooks)
+- Backend: rate-repository-api/ (GraphQL con Apollo Server, Objection, SQLite)
 
-- **Barra de aplicaciones (AppBar):**
-  - Incluye una barra superior con el nombre de la pestaña activa ("Repositories").
-  - Respeta el espacio del notch y la barra de estado en dispositivos móviles.
+Requisitos
 
-- **Diseño pulido:**
-  - Fondo general gris claro (`#e1e4e8`).
-  - Cada elemento de la lista tiene fondo blanco y bordes redondeados.
-  - La etiqueta de lenguaje tiene fondo azul (`#0366d6`).
-  - Estilos responsivos y modernos.
+- Node (recomendado >= 20)
+- npm
+- Expo CLI (para ejecutar la app móvil)
 
-- **Componentización:**
-  - Componentes reutilizables y modulares: `RepositoryList`, `RepositoryItem`, `AppBar`, `AppBarTab`.
-  - Separación clara de responsabilidades y estilos.
+Instalación y ejecución (rápida)
 
-## Estructura del proyecto
+1) Backend (rate-repository-api)
 
-```
-mi-app/
-├── App.js
-├── index.js
-├── src/
-│   ├── Main.jsx
-│   └── components/
-│       ├── AppBar.jsx
-│       ├── AppBarTab.jsx
-│       ├── RepositoryList.jsx
-│       └── RepositoryItem.jsx
-├── assets/
-├── package.json
-└── ...
-```
+- cd rate-repository-api
+- Copia `.env.template` a `.env` y completa las variables (GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, JWT_SECRET si quieres personalizarlo)
+- npm install
+- npm run build        # ejecuta migraciones y crea la DB
+- (opcional) npm run seed:run  # inicializa datos (sobrescribe datos existentes)
+- npm start            # arranca el servidor (Apollo: http://localhost:4000 por defecto)
 
-## Instalación y ejecución
+Consulta `rate-repository-api/README.md` para más detalles.
 
-1. Clona el repositorio o descarga el código fuente.
-2. Instala las dependencias:
-   ```sh
-   npm install
-   ```
-3. Inicia la aplicación con Expo:
-   ```sh
-   npm start
-   ```
-4. Abre la app en un emulador, dispositivo físico o en el navegador (web) usando Expo Go o el navegador web.
+2) Cliente (mi-app)
 
-## Tecnologías utilizadas
-- React Native
-- Expo
-- JavaScript (ES6+)
+- Desde la raíz del proyecto: npm install
+- Define la variable de entorno `APOLLO_URI` para que apunte al servidor Apollo (ej.: http://localhost:4000)
+  - macOS / Linux:
+    APOLLO_URI=http://localhost:4000 npm start
+  - Windows (cmd):
+    set APOLLO_URI=http://localhost:4000 && npm start
+  - Windows (PowerShell):
+    $env:APOLLO_URI='http://localhost:4000'; npm start
 
-## Notas adicionales
-- El proyecto está pensado como base para prácticas de React Native y no incluye backend ni persistencia real de datos.
-- El diseño y la estructura siguen las recomendaciones del curso Full Stack Open.
-- Puedes modificar y extender los componentes para agregar nuevas funcionalidades, como navegación entre vistas o manejo de datos reales desde una API.
+Nota: en algunos emuladores Android puede ser necesario usar `10.0.2.2` en vez de `localhost`.
 
-## Autor
-- Proyecto realizado como parte del curso [Full Stack Open](https://fullstackopen.com/).
+Comandos útiles
+
+- Cliente (raíz):
+  - npm start
+  - npm run android
+  - npm run ios
+  - npm run web
+  - npm run lint
+
+- Backend (rate-repository-api):
+  - npm start
+  - npm run start:dev
+  - npm run lint
+  - npm test
+  - npm run migrate:latest
+  - npm run seed:run
+
+Desarrollo
+
+- El cliente usa Apollo Client (App.js) y la consulta de repositorios está en `src/hooks/useRepositories.js`.
+- Componentes principales: `src/components/RepositoryList.jsx`, `RepositoryItem.jsx`, `AppBar.jsx`, `SignIn.jsx`.
+- La vista de inicio de sesión (`SignIn.jsx`) actualmente es un ejemplo y no realiza la autenticación con el servidor (hace console.log en submit).
+- El backend contiene el esquema GraphQL en `rate-repository-api/src/graphql` y guarda datos en `rate-repository-api/database.sqlite`.
+
+Tests y lint
+
+- Backend: cd rate-repository-api && npm test
+- Lint cliente: npm run lint
+- Lint backend: cd rate-repository-api && npm run lint
+
+Más información
+
+Revisa `rate-repository-api/README.md` para instrucciones completas del servidor.
 
 ---
-¡Explora el código, experimenta con los estilos y sigue aprendiendo React Native!
 
+¿Quieres que cree un commit con este cambio en el repositorio?
