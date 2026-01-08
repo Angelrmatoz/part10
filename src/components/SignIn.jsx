@@ -3,6 +3,8 @@ import { Button } from 'react-native';
 import { Formik } from 'formik';
 import Text from './Text';
 import FormikTextInput from './FormikTextInput';
+import useSignIn from '../hooks/useSignIn';
+import { useNavigate } from 'react-router-native';
 
 const validate = values => {
     const errors = {};
@@ -16,9 +18,22 @@ const validate = values => {
 };
 
 const SignIn = () => {
-    const onSubmit = values => {
-        console.log('Sign in submit:', values);
+    const [signIn] = useSignIn();
+    const navigate = useNavigate();
+
+    const onSubmit = async values => {
+        const { username, password } = values;
+
+        try {
+            const { data } = await signIn({ username, password });
+            if (data) {
+                navigate('/');
+            }
+        } catch (e) {
+            console.log(e);
+        }
     };
+
 
     return (
         <Formik

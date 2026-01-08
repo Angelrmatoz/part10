@@ -2,6 +2,8 @@ import React from 'react';
 import {View, StyleSheet, TouchableWithoutFeedback, ScrollView} from 'react-native';
 import Constants from 'expo-constants';
 import {Link, useLocation} from 'react-router-native';
+import {useQuery, gql, useApolloClient} from '@apollo/client';
+import AuthStorage from '../utils/authStorage';
 import Text from './Text';
 
 const styles = StyleSheet.create({
@@ -29,8 +31,27 @@ const styles = StyleSheet.create({
     },
 });
 
+const AUTHORIZED_USER = gql`
+  query {
+    me {
+      id
+      username
+    }
+  }
+`;
+
+const authStorage = new AuthStorage();
+
 const AppBar = () => {
     const location = useLocation();
+    const { data } = useQuery(AUTHORIZED_USER);
+    const apolloClient = useApolloClient();
+
+    const onSignOut = async () => {
+        await authStorage.removeAccessToken();
+        await apolloClient.resetStore();
+    };
+
     return (
         <View style={styles.container}>
             <ScrollView horizontal>
@@ -38,10 +59,18 @@ const AppBar = () => {
                       style={[styles.tab, location.pathname === '/' && styles.activeTab]}>
                     <Text style={styles.tabText}>Repositories</Text>
                 </Link>
-                <Link to="/sign-in" component={TouchableWithoutFeedback}
-                      style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
-                    <Text style={styles.tabText}>Sign In</Text>
-                </Link>
+                {data && data.me ? (
+                    <TouchableWithoutFeedback onPress={onSignOut}>
+                        <View style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
+                            <Text style={styles.tabText}>Sign Out</Text>
+                        </View>
+                    </TouchableWithoutFeedback>
+                ) : (
+                    <Link to="/sign-in" component={TouchableWithoutFeedback}
+                          style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
+                        <Text style={styles.tabText}>Sign In</Text>
+                    </Link>
+                )}
             </ScrollView>
         </View>
     );
