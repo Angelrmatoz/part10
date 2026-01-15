@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, Linking as RNLinking } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, Linking as RNLinking, ActivityIndicator } from 'react-native';
 import { useParams } from 'react-router-native';
 import { gql, useQuery } from '@apollo/client';
 import RepositoryItem from './RepositoryItem';
@@ -8,14 +8,13 @@ import Text from './Text';
 let Linking;
 try {
   // try to require expo-linking at runtime (works if installed)
-  // eslint-disable-next-line global-require
   Linking = require('expo-linking');
 } catch (e) {
   Linking = RNLinking;
 }
 
 const GET_REPOSITORY = gql`
-  query Repository($id: ID!) {
+  query Repository($id: ID!, $first: Int, $after: String) {
     repository(id: $id) {
       id
       fullName
@@ -27,7 +26,8 @@ const GET_REPOSITORY = gql`
       reviewCount
       ownerAvatarUrl
       url
-      reviews(first: 10) {
+      reviews(first: $first, after: $after) {
+        totalCount
         edges {
           node {
             id
@@ -39,6 +39,12 @@ const GET_REPOSITORY = gql`
               username
             }
           }
+          cursor
+        }
+        pageInfo {
+          endCursor
+          startCursor
+          hasNextPage
         }
       }
     }
@@ -87,15 +93,58 @@ const RepositoryInfo = ({ repository }) => (
 
 const SingleRepository = () => {
   const { id } = useParams();
-  const { data, loading, error } = useQuery(GET_REPOSITORY, { variables: { id }, fetchPolicy: 'cache-and-network' });
+  const FIRST = 5; // number of reviews to load per page (adjust while testing)
+  const [fetchingMore, setFetchingMore] = useState(false);
 
-  if (loading) return <Text>Loading...</Text>;
+  const initialVariables = { id, first: FIRST };
+  const { data, loading, error, fetchMore } = useQuery(GET_REPOSITORY, { variables: initialVariables, fetchPolicy: 'cache-and-network' });
+
+  if (loading && !data) return <Text>Loading...</Text>;
   if (error) return <Text>Error: {error.message}</Text>;
   // Guard: si no hay repository, evitar pasar undefined a RepositoryItem
   if (!data || !data.repository) return <Text>Repository not found</Text>;
 
   const repository = data.repository;
-  const reviews = repository?.reviews?.edges?.map(e => e.node) ?? [];
+  const reviewsConnection = repository.reviews || { edges: [], pageInfo: {} };
+  const reviews = reviewsConnection.edges.map(e => e.node) ?? [];
+  const pageInfo = reviewsConnection.pageInfo || { hasNextPage: false };
+
+  const handleFetchMore = async () => {
+    if (fetchingMore) return;
+    if (!pageInfo.hasNextPage) return;
+    if (reviews.length < FIRST) return; // don't fetch more if we don't have a full first page
+
+    setFetchingMore(true);
+    try {
+      await fetchMore({
+        variables: { id, first: FIRST, after: pageInfo.endCursor },
+        updateQuery: (prev, { fetchMoreResult }) => {
+          if (!fetchMoreResult) return prev;
+          const nextReviews = fetchMoreResult.repository.reviews;
+          return {
+            repository: {
+              ...prev.repository,
+              reviews: {
+                ...nextReviews,
+                edges: [...prev.repository.reviews.edges, ...nextReviews.edges],
+              },
+            },
+          };
+        },
+      });
+    } catch (e) {
+      // ignore fetchMore error for now or you can set an error state
+    }
+    setFetchingMore(false);
+  };
+
+  const renderFooter = () => (
+    fetchingMore ? (
+      <View style={{ padding: 12 }}>
+        <ActivityIndicator />
+      </View>
+    ) : null
+  );
 
   return (
     <FlatList
@@ -105,6 +154,9 @@ const SingleRepository = () => {
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       ListHeaderComponent={() => <RepositoryInfo repository={repository} />}
       contentContainerStyle={{ paddingBottom: 40 }}
+      onEndReached={handleFetchMore}
+      onEndReachedThreshold={0.5}
+      ListFooterComponent={renderFooter}
     />
   );
 };

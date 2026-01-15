@@ -65,6 +65,10 @@ const AppBar = () => {
                               style={[styles.tab, location.pathname === '/create-review' && styles.activeTab]}>
                             <Text style={styles.tabText}>Create a review</Text>
                         </Link>
+                        <Link to="/my-reviews" component={TouchableWithoutFeedback}
+                              style={[styles.tab, location.pathname === '/my-reviews' && styles.activeTab]}>
+                            <Text style={styles.tabText}>My reviews</Text>
+                        </Link>
                         <TouchableWithoutFeedback onPress={onSignOut}>
                             <View style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
                                 <Text style={styles.tabText}>Sign Out</Text>
