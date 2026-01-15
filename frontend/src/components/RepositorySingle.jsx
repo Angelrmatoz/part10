@@ -4,7 +4,6 @@ import { useParams } from 'react-router-native';
 import { gql, useQuery } from '@apollo/client';
 import RepositoryItem from './RepositoryItem';
 import Text from './Text';
-import { format } from 'date-fns';
 
 let Linking;
 try {
@@ -46,8 +45,17 @@ const GET_REPOSITORY = gql`
   }
 `;
 
+const formatDate = (iso) => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+};
+
 const ReviewItem = ({ review }) => {
-  const formattedDate = review.createdAt ? format(new Date(review.createdAt), 'dd.MM.yyyy') : '';
+  const formattedDate = review.createdAt ? formatDate(review.createdAt) : '';
   return (
     <View style={styles.reviewContainer} testID={`reviewItem-${review.id}`}>
       <View style={styles.ratingCircle}>
@@ -83,8 +91,10 @@ const SingleRepository = () => {
 
   if (loading) return <Text>Loading...</Text>;
   if (error) return <Text>Error: {error.message}</Text>;
+  // Guard: si no hay repository, evitar pasar undefined a RepositoryItem
+  if (!data || !data.repository) return <Text>Repository not found</Text>;
 
-  const repository = data?.repository;
+  const repository = data.repository;
   const reviews = repository?.reviews?.edges?.map(e => e.node) ?? [];
 
   return (

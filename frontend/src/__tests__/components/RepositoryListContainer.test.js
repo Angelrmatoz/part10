@@ -4,6 +4,10 @@ import RepositoryList from '../../components/RepositoryList';
 import useRepositories from '../../hooks/useRepositories';
 
 jest.mock('../../hooks/useRepositories');
+// Mock react-router-native to avoid ESM import errors in Jest
+jest.mock('react-router-native', () => ({
+    useNavigate: () => jest.fn(),
+}));
 
 describe('RepositoryList', () => {
     describe('RepositoryListContainer', () => {
