@@ -87,7 +87,7 @@ const RepositoryInfo = ({ repository }) => (
 
 const SingleRepository = () => {
   const { id } = useParams();
-  const { data, loading, error } = useQuery(GET_REPOSITORY, { variables: { id } });
+  const { data, loading, error } = useQuery(GET_REPOSITORY, { variables: { id }, fetchPolicy: 'cache-and-network' });
 
   if (loading) return <Text>Loading...</Text>;
   if (error) return <Text>Error: {error.message}</Text>;

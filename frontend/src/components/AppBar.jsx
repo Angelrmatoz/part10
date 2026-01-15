@@ -60,11 +60,17 @@ const AppBar = () => {
                     <Text style={styles.tabText}>Repositories</Text>
                 </Link>
                 {data && data.me ? (
-                    <TouchableWithoutFeedback onPress={onSignOut}>
-                        <View style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
-                            <Text style={styles.tabText}>Sign Out</Text>
-                        </View>
-                    </TouchableWithoutFeedback>
+                    <>
+                        <Link to="/create-review" component={TouchableWithoutFeedback}
+                              style={[styles.tab, location.pathname === '/create-review' && styles.activeTab]}>
+                            <Text style={styles.tabText}>Create a review</Text>
+                        </Link>
+                        <TouchableWithoutFeedback onPress={onSignOut}>
+                            <View style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
+                                <Text style={styles.tabText}>Sign Out</Text>
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </>
                 ) : (
                     <Link to="/sign-in" component={TouchableWithoutFeedback}
                           style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
