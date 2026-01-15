@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FlatList, View, StyleSheet, TouchableOpacity, Text as RNText, Modal, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { FlatList, View, StyleSheet, TouchableOpacity, Text as RNText, Modal, Pressable, TextInput } from 'react-native';
 import RepositoryItem from './RepositoryItem';
 import useRepositories from '../hooks/useRepositories';
 import { useNavigate } from 'react-router-native';
@@ -71,6 +71,16 @@ const styles = StyleSheet.create({
         color: '#0366d6',
         fontWeight: 'bold',
     },
+    searchInput: {
+        height: 44,
+        backgroundColor: '#fff',
+        borderRadius: 6,
+        paddingHorizontal: 12,
+        fontSize: 16,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
 });
 
 const ItemSeparator = () => <View style={styles.separator} />;
@@ -81,12 +91,51 @@ const options = [
     { key: 'lowest', label: 'Lowest rated repositories' },
 ];
 
-const RepositoryListHeader = ({ selected, onSelect }) => {
-    const [visible, setVisible] = useState(false);
-    const selectedLabel = options.find(o => o.key === selected)?.label || options[0].label;
+class RepositoryListContainer extends React.Component {
+    renderHeader = () => {
+        const { selected, onSelect, searchText, onSearchChange } = this.props;
+        const selectedLabel = options.find(o => o.key === selected)?.label || options[0].label;
 
+        return (
+            <View style={styles.header}>
+                <TextInput
+                    placeholder="Search"
+                    value={searchText}
+                    onChangeText={onSearchChange}
+                    style={styles.searchInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    clearButtonMode="while-editing"
+                />
+
+                <Selector selected={selected} selectedLabel={selectedLabel} onSelect={onSelect} />
+            </View>
+        );
+    };
+
+    render() {
+        const { data, renderItem, keyExtractor, loading } = this.props;
+
+        if (loading) return null;
+
+        return (
+            <FlatList
+                style={styles.list}
+                data={data}
+                ItemSeparatorComponent={ItemSeparator}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                contentContainerStyle={{ paddingVertical: 10 }}
+                ListHeaderComponent={this.renderHeader}
+            />
+        );
+    }
+}
+
+const Selector = ({ selected, selectedLabel, onSelect }) => {
+    const [visible, setVisible] = useState(false);
     return (
-        <View style={styles.header}>
+        <View>
             <TouchableOpacity onPress={() => setVisible(true)} style={styles.selectorRow}>
                 <RNText style={styles.selectorText}>{selectedLabel}</RNText>
                 <RNText style={styles.chevron}>▾</RNText>
@@ -123,10 +172,18 @@ const RepositoryListHeader = ({ selected, onSelect }) => {
     );
 };
 
-const RepositoryList = () => {
+const RepositoryListWrapper = () => {
     const [selectedOrder, setSelectedOrder] = useState('latest');
+    const [searchText, setSearchText] = useState('');
+    const [debounced, setDebounced] = useState(searchText);
 
-    // Map selectedOrder to GraphQL variables
+    // simple debounce: update debounced after 500ms of inactivity
+    useEffect(() => {
+        const t = setTimeout(() => setDebounced(searchText), 500);
+        return () => clearTimeout(t);
+    }, [searchText]);
+
+    // map order to GraphQL variables
     let orderBy = 'CREATED_AT';
     let orderDirection = 'DESC';
 
@@ -136,16 +193,11 @@ const RepositoryList = () => {
     } else if (selectedOrder === 'lowest') {
         orderBy = 'RATING_AVERAGE';
         orderDirection = 'ASC';
-    } else {
-        // latest
-        orderBy = 'CREATED_AT';
-        orderDirection = 'DESC';
     }
 
-    const { repositories, loading } = useRepositories({ orderBy, orderDirection });
+    const { repositories, loading } = useRepositories({ orderBy, orderDirection, searchKeyword: debounced });
     const navigate = useNavigate();
 
-    // repositories might be an array (from hook) or a paginated object with edges (from tests)
     const data = Array.isArray(repositories)
         ? repositories
         : repositories?.edges?.map(edge => edge.node) || [];
@@ -156,19 +208,19 @@ const RepositoryList = () => {
         </TouchableOpacity>
     );
 
-    if (loading) return null;
-
     return (
-        <FlatList
-            style={styles.list}
+        <RepositoryListContainer
             data={data}
-            ItemSeparatorComponent={ItemSeparator}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingVertical: 10 }}
-            ListHeaderComponent={<RepositoryListHeader selected={selectedOrder} onSelect={setSelectedOrder} />}
+            loading={loading}
+            selected={selectedOrder}
+            onSelect={setSelectedOrder}
+            searchText={searchText}
+            onSearchChange={setSearchText}
         />
     );
 };
 
-export default RepositoryList;
+export default RepositoryListWrapper;
+
