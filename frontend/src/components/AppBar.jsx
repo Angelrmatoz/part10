@@ -72,10 +72,16 @@ const AppBar = () => {
                         </TouchableWithoutFeedback>
                     </>
                 ) : (
-                    <Link to="/sign-in" component={TouchableWithoutFeedback}
-                          style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
-                        <Text style={styles.tabText}>Sign In</Text>
-                    </Link>
+                    <>
+                      <Link to="/sign-in" component={TouchableWithoutFeedback}
+                            style={[styles.tab, location.pathname === '/sign-in' && styles.activeTab]}>
+                          <Text style={styles.tabText}>Sign In</Text>
+                      </Link>
+                      <Link to="/sign-up" component={TouchableWithoutFeedback}
+                            style={[styles.tab, location.pathname === '/sign-up' && styles.activeTab]}>
+                          <Text style={styles.tabText}>Sign up</Text>
+                      </Link>
+                    </>
                 )}
             </ScrollView>
         </View>
