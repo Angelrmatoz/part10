@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { gql, useQuery } from '@apollo/client';
+import { View, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { gql, useQuery, useMutation } from '@apollo/client';
 import { useNavigate } from 'react-router-native';
 import Text from './Text';
 
@@ -32,6 +32,12 @@ const GET_CURRENT_USER = gql`
   }
 `;
 
+const DELETE_REVIEW = gql`
+  mutation DeleteReview($id: ID!) {
+    deleteReview(id: $id)
+  }
+`;
+
 const formatDate = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
@@ -41,7 +47,7 @@ const formatDate = (iso) => {
   return `${dd}.${mm}.${yyyy}`;
 };
 
-const MyReviewItem = ({ review, onViewRepository }) => (
+const MyReviewItem = ({ review, onViewRepository, onDelete }) => (
   <View style={styles.reviewContainer} testID={`myReviewItem-${review.id}`}>
     <View style={styles.ratingCircle}>
       <Text color="primary" fontWeight="bold">{review.rating}</Text>
@@ -51,8 +57,11 @@ const MyReviewItem = ({ review, onViewRepository }) => (
       <Text color="textSecondary">{formatDate(review.createdAt)}</Text>
       <Text>{review.text}</Text>
       <View style={styles.actionsRow}>
-        <TouchableOpacity onPress={() => onViewRepository(review.repository?.id)} style={styles.actionButton}>
+        <TouchableOpacity onPress={() => onViewRepository(review.repository?.id)} style={styles.viewButton}>
           <Text color="white">View repository</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onDelete(review.id)} style={styles.deleteButton}>
+          <Text color="white">Delete review</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -60,7 +69,8 @@ const MyReviewItem = ({ review, onViewRepository }) => (
 );
 
 const MyReviews = () => {
-  const { data, loading, error } = useQuery(GET_CURRENT_USER, { variables: { includeReviews: true }, fetchPolicy: 'cache-and-network' });
+  const { data, loading, error, refetch } = useQuery(GET_CURRENT_USER, { variables: { includeReviews: true }, fetchPolicy: 'cache-and-network' });
+  const [doDelete] = useMutation(DELETE_REVIEW);
   const navigate = useNavigate();
 
   if (loading) return <Text>Loading...</Text>;
@@ -75,10 +85,31 @@ const MyReviews = () => {
     if (repoId) navigate(`/repositories/${repoId}`);
   };
 
+  const handleDelete = (reviewId) => {
+    Alert.alert(
+      'Delete review',
+      'Are you sure you want to delete this review?',
+      [
+        { text: 'CANCEL', style: 'cancel' },
+        { text: 'DELETE', style: 'destructive', onPress: async () => {
+          try {
+            await doDelete({ variables: { id: reviewId } });
+            // refetch the user's reviews
+            await refetch();
+          } catch (e) {
+            // show minimal feedback
+            Alert.alert('Error', 'Could not delete the review');
+          }
+        } },
+      ],
+      { cancelable: true }
+    );
+  };
+
   return (
     <FlatList
       data={reviews}
-      renderItem={({ item }) => <MyReviewItem review={item} onViewRepository={handleViewRepository} />}
+      renderItem={({ item }) => <MyReviewItem review={item} onViewRepository={handleViewRepository} onDelete={handleDelete} />}
       keyExtractor={({ id }) => id}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
       contentContainerStyle={{ paddingBottom: 40 }}
@@ -107,14 +138,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   actionsRow: {
-    marginTop: 8,
+    marginTop: 12,
+    flexDirection: 'row',
+    gap: 12,
   },
-  actionButton: {
+  viewButton: {
     backgroundColor: '#0366d6',
-    padding: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
     borderRadius: 4,
-    alignSelf: 'flex-start',
-    marginTop: 6,
+    alignItems: 'center',
+  },
+  deleteButton: {
+    backgroundColor: '#d73a4a',
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 4,
+    alignItems: 'center',
+    marginLeft: 12,
   },
 });
 
