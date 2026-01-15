@@ -1,7 +1,8 @@
 import React from 'react';
-import { FlatList, View, StyleSheet } from 'react-native';
+import { FlatList, View, StyleSheet, TouchableOpacity } from 'react-native';
 import RepositoryItem from './RepositoryItem';
 import useRepositories from '../hooks/useRepositories';
+import { useNavigate } from 'react-router-native';
 
 const styles = StyleSheet.create({
     separator: {
@@ -17,14 +18,25 @@ const ItemSeparator = () => <View style={styles.separator} />;
 
 const RepositoryList = () => {
     const { repositories, loading } = useRepositories();
-    const renderItem = ({ item }) => <RepositoryItem item={item} />;
+    const navigate = useNavigate();
+
+    // repositories might be an array (from hook) or a paginated object with edges (from tests)
+    const data = Array.isArray(repositories)
+        ? repositories
+        : repositories?.edges?.map(edge => edge.node) || [];
+
+    const renderItem = ({ item }) => (
+        <TouchableOpacity onPress={() => navigate(`/repositories/${item.id}`)}>
+            <RepositoryItem item={item} />
+        </TouchableOpacity>
+    );
 
     if (loading) return null;
 
     return (
         <FlatList
             style={styles.list}
-            data={repositories}
+            data={data}
             ItemSeparatorComponent={ItemSeparator}
             renderItem={renderItem}
             keyExtractor={(item) => item.id}

@@ -72,7 +72,7 @@ const formatCount = (count) => {
 };
 
 const RepositoryItem = ({ item }) => (
-  <View style={styles.container}>
+  <View testID="repositoryItem" style={styles.container}>
     <Image source={{ uri: item.ownerAvatarUrl }} style={styles.avatar} />
     <View style={styles.info}>
       <Text style={styles.fullName}>{item.fullName}</Text>
@@ -103,4 +103,3 @@ const RepositoryItem = ({ item }) => (
 );
 
 export default RepositoryItem;
-
